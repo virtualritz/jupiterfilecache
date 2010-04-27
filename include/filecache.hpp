@@ -38,15 +38,17 @@
  *
  */
 
-
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/interprocess/detail/os_thread_functions.hpp>
 #include <boost/filesystem/path.hpp>
 #include <map>
 #include <set>
 
 namespace fs = boost::filesystem;
-using namespace std;
+namespace ipd = boost::interprocess::detail;
 
-namespace filecache {
+namespace Jupiter {
 
 /**
  * Multi location, multi process, thread safe file cache class.
@@ -60,7 +62,7 @@ namespace filecache {
  *    file in any dangerous way, only reading is performed on those files.
  * -# The cache is kept synchronized with the files it mirrors: if an original
  *    file is newer than the cached one (or has a different size), the cache is
- *    updated; unless the file is being used by another cach instance on the
+ *    updated; unless the file is being used by another cache instance on the
  *    same machine.
  * -# A file is identified by its full path: files that have the same name in
  *    different directories do not collide.
@@ -92,7 +94,7 @@ namespace filecache {
  * the same process will keep shared files locked throughout their lifetime.
  *
  */
-class filecache {
+class FileCache {
 	public:
 
 		/**
@@ -119,24 +121,24 @@ class filecache {
 		 *                   will always return the original filename.
 		 *
 		 */
-                      filecache( bool activate = true );
-		              filecache( const fs::path& where, bool activate = true );
-		              filecache( const char* where, bool activate = true );
+                      FileCache( bool activate = true );
+		              FileCache( const fs::path& where, bool activate = true );
+                      FileCache( const std::string& where, bool activate = true );
 		/**
 		 * Copy constructor.
 		 *
 		 * <a href="http://en.wikipedia.org/wiki/Rule_of_three_(C++_programming)">Rule of three</a>. :)
 		 *
 		 */
-		              filecache( const filecache& fc );
+		              FileCache( const FileCache& fc );
 		/**
 		 * Assignment operator.
 		 *
 		 * <a href="http://en.wikipedia.org/wiki/Rule_of_three_(C++_programming)">Rule of three</a>. :)
 		 *
 		 */
-		filecache&    operator=( const filecache& fc );
-		bool          operator==( const filecache& fc ) const;
+		FileCache&    operator=( const FileCache& fc );
+		bool          operator==( const FileCache& fc ) const;
 		/**
 		 * Destructor.
 		 *
@@ -148,7 +150,7 @@ class filecache {
 		 * on a machine that always runs at least one process using it.
 		 *
 		 */
-		             ~filecache();
+                     ~FileCache();
 
 		/**
 		 * Cache a file.
@@ -169,7 +171,7 @@ class filecache {
 		 *
 		 */
 		fs::path      cacheFile( const fs::path& );
-		std::string   cacheFile( const char* toCache );
+		std::string   cacheFile( const std::string& toCache );
 
 		/**
 		 * Copy a file back from the cache.
@@ -188,7 +190,7 @@ class filecache {
 		 *
 		 */
 		fs::path      uncacheFile( const fs::path& fromCache, bool overwrite = true, bool ifNewer = true );
-		std::string   uncacheFile( const char* fromCache, bool overwrite = true, bool ifNewer = true );
+		std::string   uncacheFile( const std::string& fromCache, bool overwrite = true, bool ifNewer = true );
 
 		/**
 		 * Construct a cache path for writing.
@@ -209,7 +211,7 @@ class filecache {
 		 *
 		 */
 		fs::path      cacheFileForWriting( const fs::path& toCache );
-		std::string   cacheFileForWriting( const char* toCache );
+		std::string   cacheFileForWriting( const std::string& toCache );
 
 		/**
 		 * Releases a file from the cache for the current process.
@@ -221,7 +223,7 @@ class filecache {
 		 *
 		 */
 		void          releaseFile( const fs::path& path );
-		void          releaseFile( const char* path );
+		void          releaseFile( const std::string& path );
 
 		/**
 		 * Toggle verbosity messages for this cache instance on/off.
@@ -232,7 +234,7 @@ class filecache {
 		void          babble( bool logging );
 
 		void          relocate( const fs::path& where );
-		void          relocate( const char* where );
+		void          relocate( const std::string& where );
 		/**
 		 * Set the cache's new size in Megabytes for this cache's location.
 		 *
@@ -245,7 +247,7 @@ class filecache {
 		 *              of 1,000,000), not Mebibytes (multiples of 1,048,576).
 		 *
 		 */
-		void          resize( unsigned long size );
+		void          resize( uintmax_t size );
 
 		/**
 		 * Query the cache's size.
@@ -254,7 +256,9 @@ class filecache {
 		 *          (multiples of 1,048,576).
 		 *
 		 */
-		unsigned long size() const;
+		inline uintmax_t size() const {
+            return cacheSize_[ cacheLocation_ ];
+        }
 
 		/**
 		 * Convert the cache's location to a boost::filesystem::path.
@@ -262,15 +266,18 @@ class filecache {
 		 * @return  the cache's location
 		 *
 		 */
-		              operator fs::path() const;
-
+        inline        operator fs::path() const {
+            return cacheLocation_;
+        }
 		/**
 		 * Convert the cache's location to a std::string.
 		 *
 		 * @return  the cache's location
 		 *
 		 */
-		              operator string() const;
+        inline        operator std::string() const {
+            return cacheLocation_.string();
+        }
 
 		/**
 		 * Query the cache's location
@@ -278,16 +285,24 @@ class filecache {
 		 * @return  the cache's location
 		 *
 		 */
-		string        location() const;
+		inline std::string location() const {
+            return cacheLocation_.string();
+        }
 
 	private:
 
-		typedef map< pid_t, set< unsigned > > processCounterInventory;
-		static processCounterInventory instanceCounter;
 
-		typedef map< unsigned, set< fs::path > > referenceInventory;
-		typedef map< pid_t, referenceInventory > processInventory;
-		typedef map< fs::path, processInventory > inventory;
+        typedef boost::unique_lock< boost::shared_mutex > WriteGuard;
+        typedef boost::shared_lock< boost::shared_mutex > ReadGuard;
+
+		typedef std::map< ipd::OS_process_id_t, std::set< unsigned > > ProcessCounterInventory;
+
+
+		typedef std::map< unsigned, std::set< fs::path > > ReferenceInventory;
+		typedef std::map< ipd::OS_process_id_t, ReferenceInventory > ProcessInventory;
+		typedef std::map< fs::path, ProcessInventory > Inventory;
+
+
 		/**
 		 * The class keeps a map of cache locations
 		 * Each entry points to a map of process IDs
@@ -307,16 +322,21 @@ class filecache {
 		 *   the process of render A has terminated, the file will get updated
 		 *   in the cache.
 		 */
-		static inventory cacheInventory;
-		typedef map< fs::path, intmax_t > pathSizeMap;
-		static pathSizeMap cacheSize;
+        typedef std::map< fs::path, uintmax_t > PathSizeMap;
 
-		bool cache, log;
-		fs::path cacheLocation, cwd;
+		static ProcessCounterInventory instanceCounter_;
+		static Inventory cacheInventory_;
+		static PathSizeMap cacheSize_;
 
-		string processName;
+		bool cache_, log_;
+		fs::path cacheLocation_, cwd_;
 
-		unsigned reference;
+		std::string processName_;
+
+		unsigned reference_;
+
+        mutable boost::shared_mutex mutex_;
+        mutable boost::shared_mutex messageMutex_;
 
 		void init_cache( const fs::path&, bool );
 		void relocate_cache( const fs::path& where );
@@ -340,8 +360,8 @@ class filecache {
 
 		bool create_full_path( const fs::path& ) const;
 
-		inline void message( const string& message ) const;
-		string get_process_name() const;
+		inline void message( const std::string& message ) const;
+		std::string get_process_name() const;
 };
 
 
