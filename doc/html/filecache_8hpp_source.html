@@ -22,104 +22,120 @@
       <li><a href="files.html"><span>File&nbsp;List</span></a></li>
     </ul>
   </div>
-  <div class="navpath"><a class="el" href="dir_fddb37a958fffdaa1dc67f242df10014.html">include</a>
+  <div class="navpath"><a class="el" href="dir_90f50487a17da2952196b7c97b962486.html">include</a>
   </div>
 </div>
 <div class="contents">
 <h1>filecache.hpp</h1><a href="filecache_8hpp.html">Go to the documentation of this file.</a><div class="fragment"><pre class="fragment"><a name="l00001"></a>00001 
-<a name="l00042"></a>00042 <span class="preprocessor">#include &lt;boost/filesystem/path.hpp&gt;</span>
-<a name="l00043"></a>00043 <span class="preprocessor">#include &lt;map&gt;</span>
-<a name="l00044"></a>00044 <span class="preprocessor">#include &lt;set&gt;</span>
-<a name="l00045"></a>00045 
-<a name="l00046"></a>00046 <span class="keyword">namespace </span>fs = boost::filesystem;
-<a name="l00047"></a>00047 <span class="keyword">using namespace </span>std;
-<a name="l00048"></a>00048 
-<a name="l00049"></a>00049 <span class="keyword">namespace </span>filecache {
+<a name="l00041"></a>00041 <span class="preprocessor">#include &lt;boost/thread/mutex.hpp&gt;</span>
+<a name="l00042"></a>00042 <span class="preprocessor">#include &lt;boost/thread/thread.hpp&gt;</span>
+<a name="l00043"></a>00043 <span class="preprocessor">#include &lt;boost/interprocess/detail/os_thread_functions.hpp&gt;</span>
+<a name="l00044"></a>00044 <span class="preprocessor">#include &lt;boost/filesystem/path.hpp&gt;</span>
+<a name="l00045"></a>00045 <span class="preprocessor">#include &lt;map&gt;</span>
+<a name="l00046"></a>00046 <span class="preprocessor">#include &lt;set&gt;</span>
+<a name="l00047"></a>00047 
+<a name="l00048"></a>00048 <span class="keyword">namespace </span>fs = boost::filesystem;
+<a name="l00049"></a>00049 <span class="keyword">namespace </span>ipd = boost::interprocess::detail;
 <a name="l00050"></a>00050 
-<a name="l00095"></a><a class="code" href="classfilecache_1_1filecache.html">00095</a> <span class="keyword">class </span><a class="code" href="classfilecache_1_1filecache.html" title="Multi location, multi process, thread safe file cache class.">filecache</a> {
-<a name="l00096"></a>00096         <span class="keyword">public</span>:
-<a name="l00097"></a>00097 
-<a name="l00122"></a>00122                       <a class="code" href="classfilecache_1_1filecache_a73fca1f3936c7e32a1204b27a75b7b74.html#a73fca1f3936c7e32a1204b27a75b7b74" title="Creates a new cache instance.">filecache</a>( <span class="keywordtype">bool</span> activate = <span class="keyword">true</span> );
-<a name="l00123"></a>00123                               <a class="code" href="classfilecache_1_1filecache_a73fca1f3936c7e32a1204b27a75b7b74.html#a73fca1f3936c7e32a1204b27a75b7b74" title="Creates a new cache instance.">filecache</a>( <span class="keyword">const</span> fs::path&amp; where, <span class="keywordtype">bool</span> activate = <span class="keyword">true</span> );
-<a name="l00124"></a>00124                               <a class="code" href="classfilecache_1_1filecache_a73fca1f3936c7e32a1204b27a75b7b74.html#a73fca1f3936c7e32a1204b27a75b7b74" title="Creates a new cache instance.">filecache</a>( <span class="keyword">const</span> <span class="keywordtype">char</span>* where, <span class="keywordtype">bool</span> activate = <span class="keyword">true</span> );
-<a name="l00131"></a>00131                               <a class="code" href="classfilecache_1_1filecache_a73fca1f3936c7e32a1204b27a75b7b74.html#a73fca1f3936c7e32a1204b27a75b7b74" title="Creates a new cache instance.">filecache</a>( <span class="keyword">const</span> <a class="code" href="classfilecache_1_1filecache.html" title="Multi location, multi process, thread safe file cache class.">filecache</a>&amp; fc );
-<a name="l00138"></a>00138                 <a class="code" href="classfilecache_1_1filecache.html" title="Multi location, multi process, thread safe file cache class.">filecache</a>&amp;    <a class="code" href="classfilecache_1_1filecache_abd6bc7b6d29255fc38ee4202101ad33a.html#abd6bc7b6d29255fc38ee4202101ad33a" title="Assignment operator.">operator=</a>( <span class="keyword">const</span> <a class="code" href="classfilecache_1_1filecache.html" title="Multi location, multi process, thread safe file cache class.">filecache</a>&amp; fc );
-<a name="l00139"></a>00139                 <span class="keywordtype">bool</span>          operator==( <span class="keyword">const</span> <a class="code" href="classfilecache_1_1filecache.html" title="Multi location, multi process, thread safe file cache class.">filecache</a>&amp; fc ) <span class="keyword">const</span>;
-<a name="l00151"></a>00151                              <a class="code" href="classfilecache_1_1filecache_ae81aad4720ba441e2a72cc09ec1b088d.html#ae81aad4720ba441e2a72cc09ec1b088d" title="Destructor.">~filecache</a>();
-<a name="l00152"></a>00152 
-<a name="l00171"></a>00171                 fs::path      <a class="code" href="classfilecache_1_1filecache_aa4a5bf8d1eb57dda88687906c4d99e86.html#aa4a5bf8d1eb57dda88687906c4d99e86" title="Cache a file.">cacheFile</a>( <span class="keyword">const</span> fs::path&amp; );
-<a name="l00172"></a>00172                 std::string   <a class="code" href="classfilecache_1_1filecache_aa4a5bf8d1eb57dda88687906c4d99e86.html#aa4a5bf8d1eb57dda88687906c4d99e86" title="Cache a file.">cacheFile</a>( <span class="keyword">const</span> <span class="keywordtype">char</span>* toCache );
-<a name="l00173"></a>00173 
-<a name="l00190"></a>00190                 fs::path      <a class="code" href="classfilecache_1_1filecache_a29a7b3e1a95022fba9fd5ea03876b246.html#a29a7b3e1a95022fba9fd5ea03876b246" title="Copy a file back from the cache.">uncacheFile</a>( <span class="keyword">const</span> fs::path&amp; fromCache, <span class="keywordtype">bool</span> overwrite = <span class="keyword">true</span>, <span class="keywordtype">bool</span> ifNewer = <span class="keyword">true</span> );
-<a name="l00191"></a>00191                 std::string   <a class="code" href="classfilecache_1_1filecache_a29a7b3e1a95022fba9fd5ea03876b246.html#a29a7b3e1a95022fba9fd5ea03876b246" title="Copy a file back from the cache.">uncacheFile</a>( <span class="keyword">const</span> <span class="keywordtype">char</span>* fromCache, <span class="keywordtype">bool</span> overwrite = <span class="keyword">true</span>, <span class="keywordtype">bool</span> ifNewer = <span class="keyword">true</span> );
-<a name="l00192"></a>00192 
-<a name="l00211"></a>00211                 fs::path      <a class="code" href="classfilecache_1_1filecache_a6c0a08816ef1c58b013d2738e97c57ba.html#a6c0a08816ef1c58b013d2738e97c57ba" title="Construct a cache path for writing.">cacheFileForWriting</a>( <span class="keyword">const</span> fs::path&amp; toCache );
-<a name="l00212"></a>00212                 std::string   <a class="code" href="classfilecache_1_1filecache_a6c0a08816ef1c58b013d2738e97c57ba.html#a6c0a08816ef1c58b013d2738e97c57ba" title="Construct a cache path for writing.">cacheFileForWriting</a>( <span class="keyword">const</span> <span class="keywordtype">char</span>* toCache );
-<a name="l00213"></a>00213 
-<a name="l00223"></a>00223                 <span class="keywordtype">void</span>          <a class="code" href="classfilecache_1_1filecache_a05d2f2d1e3f1ce071aa3b5ae2d3242d6.html#a05d2f2d1e3f1ce071aa3b5ae2d3242d6" title="Releases a file from the cache for the current process.">releaseFile</a>( <span class="keyword">const</span> fs::path&amp; path );
-<a name="l00224"></a>00224                 <span class="keywordtype">void</span>          <a class="code" href="classfilecache_1_1filecache_a05d2f2d1e3f1ce071aa3b5ae2d3242d6.html#a05d2f2d1e3f1ce071aa3b5ae2d3242d6" title="Releases a file from the cache for the current process.">releaseFile</a>( <span class="keyword">const</span> <span class="keywordtype">char</span>* path );
-<a name="l00225"></a>00225 
-<a name="l00232"></a>00232                 <span class="keywordtype">void</span>          <a class="code" href="classfilecache_1_1filecache_a6d4cec89adc07a461c0b3e4972172c97.html#a6d4cec89adc07a461c0b3e4972172c97" title="Toggle verbosity messages for this cache instance on/off.">babble</a>( <span class="keywordtype">bool</span> logging );
-<a name="l00233"></a>00233 
-<a name="l00234"></a>00234                 <span class="keywordtype">void</span>          relocate( <span class="keyword">const</span> fs::path&amp; where );
-<a name="l00235"></a>00235                 <span class="keywordtype">void</span>          relocate( <span class="keyword">const</span> <span class="keywordtype">char</span>* where );
-<a name="l00248"></a>00248                 <span class="keywordtype">void</span>          <a class="code" href="classfilecache_1_1filecache_a04dba1aad6c66abd2c1aaf58f42c0bc3.html#a04dba1aad6c66abd2c1aaf58f42c0bc3" title="Set the cache&amp;#39;s new size in Megabytes for this cache&amp;#39;s location.">resize</a>( <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <a class="code" href="classfilecache_1_1filecache_a75614a6a06d93720d07a4ce48eba5b80.html#a75614a6a06d93720d07a4ce48eba5b80" title="Query the cache&amp;#39;s size.">size</a> );
-<a name="l00249"></a>00249 
-<a name="l00257"></a>00257                 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <a class="code" href="classfilecache_1_1filecache_a75614a6a06d93720d07a4ce48eba5b80.html#a75614a6a06d93720d07a4ce48eba5b80" title="Query the cache&amp;#39;s size.">size</a>() <span class="keyword">const</span>;
-<a name="l00258"></a>00258 
-<a name="l00265"></a>00265                               <a class="code" href="classfilecache_1_1filecache_ae1dca8cb7211096f93c9d406658a30ea.html#ae1dca8cb7211096f93c9d406658a30ea" title="Convert the cache&amp;#39;s location to a boost::filesystem::path.">operator fs::path</a>() <span class="keyword">const</span>;
-<a name="l00266"></a>00266 
-<a name="l00273"></a>00273                               <a class="code" href="classfilecache_1_1filecache_a738dc3716e29ab6b9d491046b700c585.html#a738dc3716e29ab6b9d491046b700c585" title="Convert the cache&amp;#39;s location to a std::string.">operator string</a>() <span class="keyword">const</span>;
-<a name="l00274"></a>00274 
-<a name="l00281"></a>00281                 <span class="keywordtype">string</span>        <a class="code" href="classfilecache_1_1filecache_af96addfed2c84a92bf914f2d2e3b5d18.html#af96addfed2c84a92bf914f2d2e3b5d18" title="Query the cache&amp;#39;s location.">location</a>() <span class="keyword">const</span>;
-<a name="l00282"></a>00282 
-<a name="l00283"></a>00283         <span class="keyword">private</span>:
-<a name="l00284"></a>00284 
-<a name="l00285"></a>00285                 <span class="keyword">typedef</span> map&lt; pid_t, set&lt; unsigned &gt; &gt; processCounterInventory;
-<a name="l00286"></a>00286                 <span class="keyword">static</span> processCounterInventory instanceCounter;
-<a name="l00287"></a>00287 
-<a name="l00288"></a>00288                 <span class="keyword">typedef</span> map&lt; unsigned, set&lt; fs::path &gt; &gt; referenceInventory;
-<a name="l00289"></a>00289                 <span class="keyword">typedef</span> map&lt; pid_t, referenceInventory &gt; processInventory;
-<a name="l00290"></a>00290                 <span class="keyword">typedef</span> map&lt; fs::path, processInventory &gt; inventory;
-<a name="l00310"></a>00310                 <span class="keyword">static</span> inventory cacheInventory;
-<a name="l00311"></a>00311                 <span class="keyword">typedef</span> map&lt; fs::path, intmax_t &gt; pathSizeMap;
-<a name="l00312"></a>00312                 <span class="keyword">static</span> pathSizeMap cacheSize;
-<a name="l00313"></a>00313 
-<a name="l00314"></a>00314                 <span class="keywordtype">bool</span> cache, log;
-<a name="l00315"></a>00315                 fs::path cacheLocation, cwd;
-<a name="l00316"></a>00316 
-<a name="l00317"></a>00317                 <span class="keywordtype">string</span> processName;
-<a name="l00318"></a>00318 
-<a name="l00319"></a>00319                 <span class="keywordtype">unsigned</span> reference;
-<a name="l00320"></a>00320 
-<a name="l00321"></a>00321                 <span class="keywordtype">void</span> init_cache( <span class="keyword">const</span> fs::path&amp;, <span class="keywordtype">bool</span> );
-<a name="l00322"></a>00322                 <span class="keywordtype">void</span> relocate_cache( <span class="keyword">const</span> fs::path&amp; where );
-<a name="l00323"></a>00323                 <span class="comment">// TODO: move all this stuff to a traits class and convert filecache into a template</span>
-<a name="l00324"></a>00324                 fs::path cached_file_path( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
-<a name="l00325"></a>00325                 fs::path original_file_path( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
-<a name="l00326"></a>00326                 fs::path cached_file_name( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
-<a name="l00327"></a>00327                 <span class="keywordtype">bool</span> is_remote( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
-<a name="l00328"></a>00328                 <span class="keywordtype">bool</span> is_different( <span class="keyword">const</span> fs::path&amp;, <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
-<a name="l00329"></a>00329                 <span class="keywordtype">bool</span> is_used( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
-<a name="l00330"></a>00330                 <span class="keywordtype">bool</span> is_used_by_this_cache( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
-<a name="l00331"></a>00331                 <span class="keywordtype">void</span> register_file( <span class="keyword">const</span> fs::path&amp; );
-<a name="l00332"></a>00332                 fs::path copy_to_cache( <span class="keyword">const</span> fs::path&amp;, <span class="keyword">const</span> fs::path&amp; );
-<a name="l00333"></a>00333                 <span class="keywordtype">void</span> copy_overwrite_file( <span class="keyword">const</span> fs::path&amp;, <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
-<a name="l00334"></a>00334                 <span class="keywordtype">void</span> erase_this_reference();
-<a name="l00335"></a>00335                 <span class="keywordtype">void</span> tidy_up_inventory();
-<a name="l00336"></a>00336                 <span class="keywordtype">bool</span> tidy_up_cache( <span class="keyword">const</span> fs::path&amp; path );
-<a name="l00337"></a>00337                 fs::path read_link( <span class="keyword">const</span> fs::path&amp; link ) <span class="keyword">const</span>;
-<a name="l00338"></a>00338 
-<a name="l00339"></a>00339                 time_t last_access_time( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
-<a name="l00340"></a>00340 
-<a name="l00341"></a>00341                 <span class="keywordtype">bool</span> create_full_path( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
-<a name="l00342"></a>00342 
-<a name="l00343"></a>00343                 <span class="keyword">inline</span> <span class="keywordtype">void</span> message( <span class="keyword">const</span> <span class="keywordtype">string</span>&amp; message ) <span class="keyword">const</span>;
-<a name="l00344"></a>00344                 <span class="keywordtype">string</span> get_process_name() <span class="keyword">const</span>;
-<a name="l00345"></a>00345 };
-<a name="l00346"></a>00346 
-<a name="l00347"></a>00347 
-<a name="l00348"></a>00348 } <span class="comment">// namespace filecache</span>
+<a name="l00051"></a>00051 <span class="keyword">namespace </span>Jupiter {
+<a name="l00052"></a>00052 
+<a name="l00097"></a><a class="code" href="classJupiter_1_1FileCache.html">00097</a>     <span class="keyword">class </span><a class="code" href="classJupiter_1_1FileCache.html" title="Multi location, multi process, thread safe file cache class.">FileCache</a> {
+<a name="l00098"></a>00098         <span class="keyword">public</span>:
+<a name="l00099"></a>00099 
+<a name="l00124"></a>00124                           <a class="code" href="classJupiter_1_1FileCache_a1a7c20171d8a1810177a8f7f601d22d4.html#a1a7c20171d8a1810177a8f7f601d22d4" title="Creates a new cache instance.">FileCache</a>( <span class="keywordtype">bool</span> activate = <span class="keyword">true</span> );
+<a name="l00125"></a>00125                           <a class="code" href="classJupiter_1_1FileCache_a1a7c20171d8a1810177a8f7f601d22d4.html#a1a7c20171d8a1810177a8f7f601d22d4" title="Creates a new cache instance.">FileCache</a>( <span class="keyword">const</span> fs::path&amp; where, <span class="keywordtype">bool</span> activate = <span class="keyword">true</span> );
+<a name="l00126"></a>00126                           <a class="code" href="classJupiter_1_1FileCache_a1a7c20171d8a1810177a8f7f601d22d4.html#a1a7c20171d8a1810177a8f7f601d22d4" title="Creates a new cache instance.">FileCache</a>( <span class="keyword">const</span> std::string&amp; where, <span class="keywordtype">bool</span> activate = <span class="keyword">true</span> );
+<a name="l00133"></a>00133                           <a class="code" href="classJupiter_1_1FileCache_a1a7c20171d8a1810177a8f7f601d22d4.html#a1a7c20171d8a1810177a8f7f601d22d4" title="Creates a new cache instance.">FileCache</a>( <span class="keyword">const</span> <a class="code" href="classJupiter_1_1FileCache.html" title="Multi location, multi process, thread safe file cache class.">FileCache</a>&amp; fc );
+<a name="l00140"></a>00140             <a class="code" href="classJupiter_1_1FileCache.html" title="Multi location, multi process, thread safe file cache class.">FileCache</a>&amp;    <a class="code" href="classJupiter_1_1FileCache_ae505be275ce001eb3125cf2f02ee687e.html#ae505be275ce001eb3125cf2f02ee687e" title="Assignment operator.">operator=</a>( <span class="keyword">const</span> <a class="code" href="classJupiter_1_1FileCache.html" title="Multi location, multi process, thread safe file cache class.">FileCache</a>&amp; fc );
+<a name="l00141"></a>00141             <span class="keywordtype">bool</span>          operator==( <span class="keyword">const</span> <a class="code" href="classJupiter_1_1FileCache.html" title="Multi location, multi process, thread safe file cache class.">FileCache</a>&amp; fc ) <span class="keyword">const</span>;
+<a name="l00153"></a>00153                          <a class="code" href="classJupiter_1_1FileCache_aaa837872436dd14f37a0c7bb414ff059.html#aaa837872436dd14f37a0c7bb414ff059" title="Destructor.">~FileCache</a>();
+<a name="l00154"></a>00154 
+<a name="l00173"></a>00173             fs::path      <a class="code" href="classJupiter_1_1FileCache_a1802eb61f20456a13108a7430e0182c9.html#a1802eb61f20456a13108a7430e0182c9" title="Cache a file.">cacheFile</a>( <span class="keyword">const</span> fs::path&amp; );
+<a name="l00174"></a>00174             std::string   <a class="code" href="classJupiter_1_1FileCache_a1802eb61f20456a13108a7430e0182c9.html#a1802eb61f20456a13108a7430e0182c9" title="Cache a file.">cacheFile</a>( <span class="keyword">const</span> std::string&amp; toCache );
+<a name="l00175"></a>00175 
+<a name="l00192"></a>00192             fs::path      <a class="code" href="classJupiter_1_1FileCache_ad63acda12fba3628b73cc62052ed5f18.html#ad63acda12fba3628b73cc62052ed5f18" title="Copy a file back from the cache.">uncacheFile</a>( <span class="keyword">const</span> fs::path&amp; fromCache, <span class="keywordtype">bool</span> overwrite = <span class="keyword">true</span>, <span class="keywordtype">bool</span> ifNewer = <span class="keyword">true</span> );
+<a name="l00193"></a>00193             std::string   <a class="code" href="classJupiter_1_1FileCache_ad63acda12fba3628b73cc62052ed5f18.html#ad63acda12fba3628b73cc62052ed5f18" title="Copy a file back from the cache.">uncacheFile</a>( <span class="keyword">const</span> std::string&amp; fromCache, <span class="keywordtype">bool</span> overwrite = <span class="keyword">true</span>, <span class="keywordtype">bool</span> ifNewer = <span class="keyword">true</span> );
+<a name="l00194"></a>00194 
+<a name="l00213"></a>00213             fs::path      <a class="code" href="classJupiter_1_1FileCache_a19c5dd2cc00ee747696d8a33817ef875.html#a19c5dd2cc00ee747696d8a33817ef875" title="Construct a cache path for writing.">cacheFileForWriting</a>( <span class="keyword">const</span> fs::path&amp; toCache );
+<a name="l00214"></a>00214             std::string   <a class="code" href="classJupiter_1_1FileCache_a19c5dd2cc00ee747696d8a33817ef875.html#a19c5dd2cc00ee747696d8a33817ef875" title="Construct a cache path for writing.">cacheFileForWriting</a>( <span class="keyword">const</span> std::string&amp; toCache );
+<a name="l00215"></a>00215 
+<a name="l00225"></a>00225             <span class="keywordtype">void</span>          <a class="code" href="classJupiter_1_1FileCache_a248a464453ce8e63c7ffbf33f04455b8.html#a248a464453ce8e63c7ffbf33f04455b8" title="Releases a file from the cache for the current process.">releaseFile</a>( <span class="keyword">const</span> fs::path&amp; path );
+<a name="l00226"></a>00226             <span class="keywordtype">void</span>          <a class="code" href="classJupiter_1_1FileCache_a248a464453ce8e63c7ffbf33f04455b8.html#a248a464453ce8e63c7ffbf33f04455b8" title="Releases a file from the cache for the current process.">releaseFile</a>( <span class="keyword">const</span> std::string&amp; path );
+<a name="l00227"></a>00227 
+<a name="l00234"></a>00234             <span class="keywordtype">void</span>          <a class="code" href="classJupiter_1_1FileCache_ac8c4eda4bcc68beff3bcd81da1ba5235.html#ac8c4eda4bcc68beff3bcd81da1ba5235" title="Toggle verbosity messages for this cache instance on/off.">babble</a>( <span class="keywordtype">bool</span> logging );
+<a name="l00235"></a>00235 
+<a name="l00236"></a>00236             <span class="keywordtype">void</span>          relocate( <span class="keyword">const</span> fs::path&amp; where );
+<a name="l00237"></a>00237             <span class="keywordtype">void</span>          relocate( <span class="keyword">const</span> std::string&amp; where );
+<a name="l00250"></a>00250             <span class="keywordtype">void</span>          <a class="code" href="classJupiter_1_1FileCache_a2abeec329b1cb028682e802368266be1.html#a2abeec329b1cb028682e802368266be1" title="Set the cache&amp;#39;s new size in Megabytes for this cache&amp;#39;s location.">resize</a>( uintmax_t <a class="code" href="classJupiter_1_1FileCache_a2cfadce04d35ef70a329f2981eec65e2.html#a2cfadce04d35ef70a329f2981eec65e2" title="Query the cache&amp;#39;s size.">size</a> );
+<a name="l00251"></a>00251 
+<a name="l00259"></a><a class="code" href="classJupiter_1_1FileCache_a2cfadce04d35ef70a329f2981eec65e2.html#a2cfadce04d35ef70a329f2981eec65e2">00259</a>             <span class="keyword">inline</span> uintmax_t <a class="code" href="classJupiter_1_1FileCache_a2cfadce04d35ef70a329f2981eec65e2.html#a2cfadce04d35ef70a329f2981eec65e2" title="Query the cache&amp;#39;s size.">size</a>()<span class="keyword"> const </span>{
+<a name="l00260"></a>00260                 <span class="keywordflow">return</span> cacheSize_[ cacheLocation_ ];
+<a name="l00261"></a>00261             }
+<a name="l00262"></a>00262 
+<a name="l00269"></a><a class="code" href="classJupiter_1_1FileCache_a1bb18d23ad40116e79caea006dea0802.html#a1bb18d23ad40116e79caea006dea0802">00269</a>             <span class="keyword">inline</span>        <a class="code" href="classJupiter_1_1FileCache_a1bb18d23ad40116e79caea006dea0802.html#a1bb18d23ad40116e79caea006dea0802" title="Convert the cache&amp;#39;s location to a boost::filesystem::path.">operator fs::path</a>()<span class="keyword"> const </span>{
+<a name="l00270"></a>00270                 <span class="keywordflow">return</span> cacheLocation_;
+<a name="l00271"></a>00271             }
+<a name="l00278"></a><a class="code" href="classJupiter_1_1FileCache_a28fecb5ef8dfa2cc7d613fa50ee37d4e.html#a28fecb5ef8dfa2cc7d613fa50ee37d4e">00278</a>             <span class="keyword">inline</span>        operator std::string()<span class="keyword"> const </span>{
+<a name="l00279"></a>00279                 <span class="keywordflow">return</span> cacheLocation_.string();
+<a name="l00280"></a>00280             }
+<a name="l00281"></a>00281 
+<a name="l00288"></a><a class="code" href="classJupiter_1_1FileCache_ae1fad18f9dffc5f444a4418e45ab45f5.html#ae1fad18f9dffc5f444a4418e45ab45f5">00288</a>             <span class="keyword">inline</span> std::string <a class="code" href="classJupiter_1_1FileCache_ae1fad18f9dffc5f444a4418e45ab45f5.html#ae1fad18f9dffc5f444a4418e45ab45f5" title="Query the cache&amp;#39;s location.">location</a>()<span class="keyword"> const </span>{
+<a name="l00289"></a>00289                 <span class="keywordflow">return</span> cacheLocation_.string();
+<a name="l00290"></a>00290             }
+<a name="l00291"></a>00291 
+<a name="l00292"></a>00292         <span class="keyword">private</span>:
+<a name="l00293"></a>00293 
+<a name="l00294"></a>00294             <span class="keyword">typedef</span> boost::unique_lock&lt; boost::shared_mutex &gt; WriteGuard;
+<a name="l00295"></a>00295             <span class="keyword">typedef</span> boost::shared_lock&lt; boost::shared_mutex &gt; ReadGuard;
+<a name="l00296"></a>00296 
+<a name="l00297"></a>00297             <span class="keyword">typedef</span> std::map&lt; ipd::OS_process_id_t, std::set&lt; unsigned &gt; &gt; ProcessCounterInventory;
+<a name="l00298"></a>00298 
+<a name="l00299"></a>00299             <span class="keyword">typedef</span> std::map&lt; unsigned, std::set&lt; fs::path &gt; &gt; ReferenceInventory;
+<a name="l00300"></a>00300             <span class="keyword">typedef</span> std::map&lt; ipd::OS_process_id_t, ReferenceInventory &gt; ProcessInventory;
+<a name="l00301"></a>00301             <span class="keyword">typedef</span> std::map&lt; fs::path, ProcessInventory &gt; Inventory;
+<a name="l00302"></a>00302 
+<a name="l00322"></a>00322             <span class="keyword">typedef</span> std::map&lt; fs::path, uintmax_t &gt; PathSizeMap;
+<a name="l00323"></a>00323 
+<a name="l00324"></a>00324             <span class="keyword">static</span> ProcessCounterInventory instanceCounter_;
+<a name="l00325"></a>00325             <span class="keyword">static</span> Inventory cacheInventory_;
+<a name="l00326"></a>00326             <span class="keyword">static</span> PathSizeMap cacheSize_;
+<a name="l00327"></a>00327 
+<a name="l00328"></a>00328             <span class="keywordtype">bool</span> cache_, log_;
+<a name="l00329"></a>00329             fs::path cacheLocation_, cwd_;
+<a name="l00330"></a>00330 
+<a name="l00331"></a>00331             std::string processName_;
+<a name="l00332"></a>00332 
+<a name="l00333"></a>00333             <span class="keywordtype">unsigned</span> reference_;
+<a name="l00334"></a>00334 
+<a name="l00335"></a>00335             <span class="keyword">mutable</span> boost::shared_mutex mutex_;
+<a name="l00336"></a>00336             <span class="keyword">mutable</span> boost::shared_mutex messageMutex_;
+<a name="l00337"></a>00337 
+<a name="l00338"></a>00338             <span class="keywordtype">void</span> init_cache( <span class="keyword">const</span> fs::path&amp;, <span class="keywordtype">bool</span> );
+<a name="l00339"></a>00339             <span class="keywordtype">void</span> relocate_cache( <span class="keyword">const</span> fs::path&amp; where );
+<a name="l00340"></a>00340             <span class="comment">// TODO: move all this stuff to a traits class and convert filecache into a template</span>
+<a name="l00341"></a>00341             fs::path cached_file_path( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
+<a name="l00342"></a>00342             fs::path original_file_path( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
+<a name="l00343"></a>00343             fs::path cached_file_name( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
+<a name="l00344"></a>00344             <span class="keywordtype">bool</span> is_remote( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
+<a name="l00345"></a>00345             <span class="keywordtype">bool</span> is_different( <span class="keyword">const</span> fs::path&amp;, <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
+<a name="l00346"></a>00346             <span class="keywordtype">bool</span> is_used( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
+<a name="l00347"></a>00347             <span class="keywordtype">bool</span> is_used_by_this_cache( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
+<a name="l00348"></a>00348             <span class="keywordtype">void</span> register_file( <span class="keyword">const</span> fs::path&amp; );
+<a name="l00349"></a>00349             fs::path copy_to_cache( <span class="keyword">const</span> fs::path&amp;, <span class="keyword">const</span> fs::path&amp; );
+<a name="l00350"></a>00350             <span class="keywordtype">void</span> copy_overwrite_file( <span class="keyword">const</span> fs::path&amp;, <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
+<a name="l00351"></a>00351             <span class="keywordtype">void</span> erase_this_reference();
+<a name="l00352"></a>00352             <span class="keywordtype">void</span> tidy_up_inventory();
+<a name="l00353"></a>00353             <span class="keywordtype">bool</span> tidy_up_cache( <span class="keyword">const</span> fs::path&amp; path );
+<a name="l00354"></a>00354             fs::path read_link( <span class="keyword">const</span> fs::path&amp; link ) <span class="keyword">const</span>;
+<a name="l00355"></a>00355             time_t last_access_time( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
+<a name="l00356"></a>00356             <span class="keywordtype">bool</span> create_full_path( <span class="keyword">const</span> fs::path&amp; ) <span class="keyword">const</span>;
+<a name="l00357"></a>00357 
+<a name="l00358"></a>00358             <span class="keyword">inline</span> <span class="keywordtype">void</span> message( <span class="keyword">const</span> std::string&amp; message ) <span class="keyword">const</span>;
+<a name="l00359"></a>00359             std::string get_process_name() <span class="keyword">const</span>;
+<a name="l00360"></a>00360     };
+<a name="l00361"></a>00361 
+<a name="l00362"></a>00362 
+<a name="l00363"></a>00363 } <span class="comment">// namespace Jupiter</span>
 </pre></div></div>
 <hr size="1"/><address style="text-align: right;"><small>Generated by&nbsp;
 <a href="http://www.doxygen.org/index.html">
